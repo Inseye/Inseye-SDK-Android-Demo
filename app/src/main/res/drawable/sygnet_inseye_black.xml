@@ -4,14 +4,7 @@
     android:viewportWidth="860"
     android:viewportHeight="860">
   <group>
-    <clip-path
-        android:pathData="M204,12L656,12A186,186 0,0 1,842 198L842,650A186,186 0,0 1,656 836L204,836A186,186 0,0 1,18 650L18,198A186,186 0,0 1,204 12z"/>
-    <path
-        android:pathData="M204,12L656,12A186,186 0,0 1,842 198L842,650A186,186 0,0 1,656 836L204,836A186,186 0,0 1,18 650L18,198A186,186 0,0 1,204 12z"
-        android:fillColor="#231F20"/>
     <group>
-      <clip-path
-          android:pathData="M135,257h563v332h-563z"/>
       <path
           android:pathData="M201.1,417.76L135,481.88L233.25,589H305.39L201.1,417.76Z"
           android:fillColor="#9772E8"/>

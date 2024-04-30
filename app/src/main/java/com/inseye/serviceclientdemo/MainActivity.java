@@ -45,7 +45,6 @@ public class MainActivity extends AppCompatActivity {
     private GazeDataReader gazeDataReader;
     private TextView statusTextView, gazeDataTextView;
     private Button calibrateButton, subGazeDataButton, unsubGazeDataButton;
-    private View mainView;
     private final Handler mainLooperHandler = new Handler(Looper.getMainLooper());
 
     @Override
@@ -61,7 +60,6 @@ public class MainActivity extends AppCompatActivity {
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
 
-        mainView = findViewById(R.id.main);
         calibrateButton = findViewById(R.id.calibButton);
         subGazeDataButton = findViewById(R.id.subscribeGazeButton);
         unsubGazeDataButton = findViewById(R.id.unsubscribeGazeButton);
@@ -71,7 +69,6 @@ public class MainActivity extends AppCompatActivity {
         subGazeDataButton.setOnClickListener( view -> SubscribeGazeData());
         unsubGazeDataButton.setOnClickListener( view -> UnsubscribeGazeData());
 
-        //this should be a part of sdk module
         Intent serviceIntent = new Intent();
         ComponentName component = new ComponentName(this.getString(com.inseye.shared.R.string.service_package_name), this.getString(com.inseye.shared.R.string.service_class_name));
         serviceIntent.setComponent(component);
