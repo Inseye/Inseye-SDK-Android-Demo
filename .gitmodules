@@ -1,0 +1,3 @@
+[submodule "tracker_shared"]
+	path = tracker_shared
+	url = https://github.com/Inseye/Inseye-SDK-Android-API
