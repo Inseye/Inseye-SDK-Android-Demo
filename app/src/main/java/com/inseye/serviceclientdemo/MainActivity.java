@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -18,6 +19,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -41,14 +43,10 @@ public class MainActivity extends AppCompatActivity {
     private boolean serviceBound = false;
     private ISharedService inseyeServiceClient;
     private GazeDataReader gazeDataReader;
-
     private TextView statusTextView, gazeDataTextView;
     private Button calibrateButton, subGazeDataButton, unsubGazeDataButton;
     private View mainView;
-
     private final Handler mainLooperHandler = new Handler(Looper.getMainLooper());
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,13 +59,14 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+
         mainView = findViewById(R.id.main);
         calibrateButton = findViewById(R.id.calibButton);
         subGazeDataButton = findViewById(R.id.subscribeGazeButton);
         unsubGazeDataButton = findViewById(R.id.unsubscribeGazeButton);
         statusTextView = findViewById(R.id.textViewStatus);
         gazeDataTextView = findViewById(R.id.textViewGazeData);
-
         calibrateButton.setOnClickListener( view -> RunCalibration());
         subGazeDataButton.setOnClickListener( view -> SubscribeGazeData());
         unsubGazeDataButton.setOnClickListener( view -> UnsubscribeGazeData());
@@ -84,8 +83,10 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             inseyeServiceClient = ISharedService.Stub.asInterface(iBinder);
             serviceBound = true;
-            Snackbar.make(MainActivity.this.statusTextView, "Inseye Service connected", Snackbar.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, "Inseye Service Connected", Toast.LENGTH_SHORT).show();
 
+
+            //get current tracker status
             try {
                 statusTextView.setText(inseyeServiceClient.getTrackerAvailability().toString());
 
@@ -93,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
                 throw new RuntimeException(e);
             }
 
-
+            //subscribe to tracker status event
             try {
                 inseyeServiceClient.subscribeToEyetrackerEvents(new IEyetrackerEventListener.Stub() {
                     @Override
@@ -104,21 +105,19 @@ public class MainActivity extends AppCompatActivity {
             } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }
-
         }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
-            Toast.makeText(MainActivity.this, "service disconnected", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, "Inseye Service Disconnected", Toast.LENGTH_SHORT).show();
             serviceBound = false;
             inseyeServiceClient = null;
         }
     };
 
-
     private void UnsubscribeGazeData() {
         if(!serviceBound) {
-            Snackbar.make(mainView, "not bound to service", Snackbar.LENGTH_SHORT).show();
+            Toast.makeText(this, "not bound to service", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -132,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void SubscribeGazeData() {
         if(!serviceBound) {
-            Snackbar.make(mainView, "not bound to service", Snackbar.LENGTH_SHORT).show();
+            Toast.makeText(this, "not bound to service", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -148,40 +147,45 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 gazeDataReader.start();
-                Snackbar.make(mainView, "udp port: " + result.value, Snackbar.LENGTH_SHORT).show();
+                Toast.makeText(this, "udp port: " + result.value, Toast.LENGTH_SHORT).show();
 
             } else {
                 Log.e(TAG, "gaze stream error: " + result.errorMessage);
-                Snackbar.make(mainView, "gaze stream error: " + result.errorMessage, Snackbar.LENGTH_SHORT).show();
+                Toast.makeText(this, "gaze stream error: " + result.errorMessage, Toast.LENGTH_SHORT).show();
+
 
             }
 
         } catch (RemoteException | SocketException | UnknownHostException e) {
             Log.e(TAG, e.toString());
-            Snackbar.make(mainView, e.getMessage(), Snackbar.LENGTH_SHORT).show();
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+
         }
     }
 
     private void RunCalibration() {
         if(!serviceBound) {
-            Snackbar.make(mainView, "not bound to service", Snackbar.LENGTH_SHORT).show();
+            Toast.makeText(this, "not bound to service", Toast.LENGTH_SHORT).show();
             return;
         }
 
         ActionResult result = new ActionResult();
-        IServiceBuiltInCalibrationCallback calibrationCallback;
         try {
-            calibrationCallback = inseyeServiceClient.startBuiltInCalibrationProcedure(result, new IBuiltInCalibrationCallback.Stub() {
+            IServiceBuiltInCalibrationCallback calibrationAbortHandler = inseyeServiceClient.startBuiltInCalibrationProcedure(result, new IBuiltInCalibrationCallback.Stub() {
                 @Override
                 public void finishCalibration(ActionResult calibrationResult) throws RemoteException {
                     Log.i(TAG, calibrationResult.toString());
                     if(calibrationResult.successful) {
                         Log.e(TAG, "calibration success");
-                        Snackbar.make(mainView, "calibration success", Snackbar.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "calibration success", Toast.LENGTH_SHORT).show();
+
+
                     }
                     else {
                         Log.e(TAG, "calibration fail: " + calibrationResult.errorMessage);
-                        Snackbar.make(mainView, "calibration fail: " + calibrationResult.errorMessage, Snackbar.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "calibration fail: " + calibrationResult.errorMessage, Toast.LENGTH_SHORT).show();
+
+
                     }
                 }
             });
@@ -192,12 +196,12 @@ public class MainActivity extends AppCompatActivity {
         if(result.successful) {
             Log.i(TAG, "calibration init success");
             Toast.makeText(MainActivity.this, "calibration init success", Toast.LENGTH_SHORT).show();
-            //calibrationCallback could be used to abort calibration
+            //calibrationAbortHandler could be used to abort calibration
         }
         else {
             Log.e(TAG, "calibration init fail: " + result.errorMessage);
-            Snackbar.make(mainView, "calibration init fail: " + result.errorMessage, Snackbar.LENGTH_SHORT).show();
-            //calibrationCallback is null
+            Toast.makeText(this, "calibration init fail: " + result.errorMessage, Toast.LENGTH_SHORT).show();
+            //calibrationAbortHandler is null
         }
     }
 
@@ -210,8 +214,6 @@ public class MainActivity extends AppCompatActivity {
                 throw new RuntimeException(e);
             }
         }
-
-
         super.onResume();
     }
 
