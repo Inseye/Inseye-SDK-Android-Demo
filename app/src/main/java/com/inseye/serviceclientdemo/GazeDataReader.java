@@ -27,9 +27,8 @@ public class GazeDataReader extends Thread implements Closeable {
     private final LinkedBlockingQueue<GazeData> gazeBuffer;
     private final IGazeData gazeInterface;
 
-    public interface IGazeData
-    {
-        public void nextGazeDataReady(GazeData gazeData);
+    public interface IGazeData {
+        void nextGazeDataReady(GazeData gazeData);
     }
 
     public GazeDataReader(int port, @Nullable IGazeData gazeCallback) throws SocketException, UnknownHostException {
@@ -40,12 +39,11 @@ public class GazeDataReader extends Thread implements Closeable {
 
         InetAddress address = InetAddress.getByName("0.0.0.0");
         socket = new DatagramSocket(null);
+
         socket.setReuseAddress(true);
         socket.bind(new InetSocketAddress(address, port));
-        Log.i(TAG, String.valueOf(socket.getLocalPort()));
+        Log.i(TAG, "port: " + socket.getLocalPort());
         gazeBuffer = new LinkedBlockingQueue<>(10);
-        Log.i(TAG, "start reader");
-
     }
 
     public LinkedBlockingQueue<GazeData> getGazeBuffer() {
@@ -69,7 +67,7 @@ public class GazeDataReader extends Thread implements Closeable {
                 if(gazeInterface != null)
                     gazeInterface.nextGazeDataReady(gazeData);
             } catch (IOException e) {
-                Log.e(TAG, e.getMessage());
+                Log.e(TAG, e.toString());
             }
         }
     }
