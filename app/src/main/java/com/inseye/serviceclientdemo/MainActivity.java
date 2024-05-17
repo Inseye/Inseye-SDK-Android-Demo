@@ -1,12 +1,7 @@
 package com.inseye.serviceclientdemo;
 
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
 import android.util.Log;
@@ -35,7 +30,6 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     private final String TAG = MainActivity.class.toString();
-    private boolean serviceBound = false;
     private ISharedService inseyeServiceClient;
     private InseyeServiceBinder inseyeServiceBinder;
     private GazeDataReader gazeDataReader;
@@ -69,47 +63,47 @@ public class MainActivity extends AppCompatActivity {
 
 
         inseyeServiceBinder = new InseyeServiceBinder(this);
-        inseyeServiceBinder.bind(inseyeServiceConnection);
+        inseyeServiceBinder.bind(new InseyeServiceBinder.IServiceBindCallback() {
+            @Override
+            public void serviceConnected(ISharedService service) {
+                inseyeServiceClient = service;
+                Toast.makeText(MainActivity.this, "inseye service connected", Toast.LENGTH_SHORT).show();
+
+                //get current tracker status
+                try {
+                    statusTextView.setText(inseyeServiceClient.getTrackerAvailability().toString());
+
+                } catch (RemoteException e) {
+                    throw new RuntimeException(e);
+                }
+                //subscribe to tracker status event
+                try {
+                    inseyeServiceClient.subscribeToEyetrackerEvents(new IEyetrackerEventListener.Stub() {
+                        @Override
+                        public void handleTrackerAvailabilityChanged(TrackerAvailability availability) throws RemoteException {
+                            mainLooperHandler.post(() -> statusTextView.setText(availability.toString()));
+                        }
+                    });
+                } catch (RemoteException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void serviceDisconnected() {
+                Toast.makeText(MainActivity.this, "inseye service disconnected", Toast.LENGTH_SHORT).show();
+                inseyeServiceClient = null;
+            }
+
+            @Override
+            public void serviceError(Exception e) {
+                Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
-    private final ServiceConnection inseyeServiceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            inseyeServiceClient = ISharedService.Stub.asInterface(iBinder);
-            serviceBound = true;
-            Toast.makeText(MainActivity.this, "inseye service connected", Toast.LENGTH_SHORT).show();
-
-            //get current tracker status
-            try {
-                statusTextView.setText(inseyeServiceClient.getTrackerAvailability().toString());
-
-            } catch (RemoteException e) {
-                throw new RuntimeException(e);
-            }
-
-            //subscribe to tracker status event
-            try {
-                inseyeServiceClient.subscribeToEyetrackerEvents(new IEyetrackerEventListener.Stub() {
-                    @Override
-                    public void handleTrackerAvailabilityChanged(TrackerAvailability availability) throws RemoteException {
-                        mainLooperHandler.post(() -> statusTextView.setText(availability.toString()));
-                    }
-                });
-            } catch (RemoteException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            Toast.makeText(MainActivity.this, "inseye service disconnected", Toast.LENGTH_SHORT).show();
-            serviceBound = false;
-            inseyeServiceClient = null;
-        }
-    };
-
     private void UnsubscribeGazeData() {
-        if(!serviceBound) {
+        if(!inseyeServiceBinder.isConnected()) {
             Toast.makeText(this, "not bound to service", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -123,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void SubscribeGazeData() {
-        if(!serviceBound) {
+        if(!inseyeServiceBinder.isConnected()) {
             Toast.makeText(this, "not bound to service", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -154,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void RunCalibration() {
-        if(!serviceBound) {
+        if(!inseyeServiceBinder.isConnected()) {
             Toast.makeText(this, "not bound to service", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -193,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
-        if(serviceBound) {
+        if(inseyeServiceBinder.isConnected()) {
             try {
                 statusTextView.setText(inseyeServiceClient.getTrackerAvailability().toString());
             } catch (RemoteException e) {
@@ -211,7 +205,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         try {
-            if(serviceBound) {
+            if(inseyeServiceBinder.isConnected()) {
                 inseyeServiceClient.unsubscribeFromEyetrackerEvents();
                 if(gazeDataReader != null)
                     gazeDataReader.close();
