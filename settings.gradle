@@ -22,6 +22,6 @@ dependencyResolutionManagement {
 rootProject.name = "TrackerClientDemo"
 include ':app'
 include ':inseye_client_api'
-project(':inseye_client_api').projectDir = new File(rootDir, 'tracker_shared/module/')
+project(':inseye_client_api').projectDir = new File(rootDir, 'inseye_tracker_client_api/module/')
 
 

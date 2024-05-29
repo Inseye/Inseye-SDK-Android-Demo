@@ -1,3 +1,3 @@
-[submodule "tracker_shared"]
-	path = tracker_shared
+[submodule "inseye_tracker_client_api"]
+	path = inseye_tracker_client_api
 	url = https://github.com/Inseye/Inseye-SDK-Android-API
