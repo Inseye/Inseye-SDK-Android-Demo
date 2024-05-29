@@ -72,10 +72,13 @@ public class MainActivity extends AppCompatActivity {
                 //get current tracker status
                 try {
                     statusTextView.setText(inseyeServiceClient.getTrackerAvailability().toString());
+                    if(inseyeServiceClient.getTrackerAvailability() == TrackerAvailability.Available)
+                        SubscribeGazeData();
 
                 } catch (RemoteException e) {
                     throw new RuntimeException(e);
                 }
+
                 //subscribe to tracker status event
                 try {
                     inseyeServiceClient.subscribeToEyetrackerEvents(new IEyetrackerEventListener.Stub() {
