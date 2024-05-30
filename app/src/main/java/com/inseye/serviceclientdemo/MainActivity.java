@@ -1,10 +1,15 @@
 package com.inseye.serviceclientdemo;
 
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.RemoteException;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,18 +42,25 @@ public class MainActivity extends AppCompatActivity {
     //view
     private TextView statusTextView, gazeDataTextView;
     private Button calibrateButton, subGazeDataButton, unsubGazeDataButton;
+    private RedPointView redPointView;
     private final Handler mainLooperHandler = new Handler(Looper.getMainLooper());
+    DisplayMetrics metrics = new DisplayMetrics();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+
+//        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+//            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+//            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+//            return insets;
+//        });
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
 
@@ -60,6 +72,21 @@ public class MainActivity extends AppCompatActivity {
         calibrateButton.setOnClickListener( view -> RunCalibration());
         subGazeDataButton.setOnClickListener( view -> SubscribeGazeData());
         unsubGazeDataButton.setOnClickListener( view -> UnsubscribeGazeData());
+
+
+        redPointView = findViewById(R.id.redPointView);
+
+
+        WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        Display display = windowManager.getDefaultDisplay();
+        display.getRealMetrics(metrics);
+        //red.setPoint(metrics.widthPixels /2f, metrics.heightPixels / 2f);
+
+        //red.setPoint(0, metrics.heightPixels / 2f);
+        redPointView.setPoint(metrics.widthPixels /2f , metrics.heightPixels - 100);
+
+
+
 
 
         inseyeServiceBinder = new InseyeServiceBinder(this);
@@ -80,16 +107,18 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 //subscribe to tracker status event
+
                 try {
                     inseyeServiceClient.subscribeToEyetrackerEvents(new IEyetrackerEventListener.Stub() {
                         @Override
-                        public void handleTrackerAvailabilityChanged(TrackerAvailability availability) throws RemoteException {
+                        public void handleTrackerAvailabilityChanged(TrackerAvailability availability) {
                             mainLooperHandler.post(() -> statusTextView.setText(availability.toString()));
                         }
                     });
                 } catch (RemoteException e) {
                     throw new RuntimeException(e);
                 }
+
             }
 
             @Override
@@ -119,6 +148,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void setPointCoordinates(final float normX, final float normY) {
+        if (redPointView != null) {
+            // Ensure the view has been laid out before getting its dimensions
+            redPointView.post(() -> {
+                int width = redPointView.getWidth();
+                int height = redPointView.getHeight();
+
+                // Convert normalized values to screen coordinates
+                float x = (normX + 0.5f) * width;
+                float y = (normY + 0.5f) * height;
+
+                redPointView.setPoint(x, y);
+            });
+        }
+    }
+
     private void SubscribeGazeData() {
         if(!inseyeServiceBinder.isConnected()) {
             Toast.makeText(this, "not bound to service", Toast.LENGTH_SHORT).show();
@@ -131,10 +176,10 @@ public class MainActivity extends AppCompatActivity {
                 int udpPort = result.value;
                 Log.i(TAG, "port:" + udpPort);
                 gazeDataReader = new GazeDataReader(udpPort, gazeData -> {
-                    if(gazeData.timeMilli % 10 == 0) {
                         mainLooperHandler.post(() -> gazeDataTextView.setText(String.format(Locale.US, "Left Eye:   X:%6.2f Y:%6.2f\nRight Eye: X:%6.2f Y:%6.2f\nEvent: %s\nTime: %d",
                                 gazeData.left_x, gazeData.left_y, gazeData.right_x, gazeData.right_y, gazeData.event, gazeData.timeMilli)));
-                    }
+
+                    setPointCoordinates((float) (Math.toDegrees(gazeData.left_x) / 52.1f / 2f), (float) (Math.toDegrees(gazeData.left_y) / 38.4f / 2f));
                 });
                 gazeDataReader.start();
                 Toast.makeText(this, "udp port: " + result.value, Toast.LENGTH_SHORT).show();
