@@ -32,6 +32,9 @@ dependencies {
 
     implementation project(path: ":inseye_client_api")
 
+    implementation libs.commons.math3
+
+
     implementation libs.appcompat
     implementation libs.material
     implementation libs.activity

@@ -1,10 +1,16 @@
 package com.inseye.serviceclientdemo;
 
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.RemoteException;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,7 +20,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.inseye.shared.communication.ActionResult;
 import com.inseye.shared.communication.IBuiltInCalibrationCallback;
@@ -37,18 +45,22 @@ public class MainActivity extends AppCompatActivity {
     //view
     private TextView statusTextView, gazeDataTextView;
     private Button calibrateButton, subGazeDataButton, unsubGazeDataButton;
+    private RedPointView redPointView;
     private final Handler mainLooperHandler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|
+                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
 
@@ -61,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
         subGazeDataButton.setOnClickListener( view -> SubscribeGazeData());
         unsubGazeDataButton.setOnClickListener( view -> UnsubscribeGazeData());
 
+        redPointView = findViewById(R.id.redPointView);
 
         inseyeServiceBinder = new InseyeServiceBinder(this);
         inseyeServiceBinder.bind(new InseyeServiceBinder.IServiceBindCallback() {
@@ -72,21 +85,26 @@ public class MainActivity extends AppCompatActivity {
                 //get current tracker status
                 try {
                     statusTextView.setText(inseyeServiceClient.getTrackerAvailability().toString());
+                    if(inseyeServiceClient.getTrackerAvailability() == TrackerAvailability.Available)
+                        SubscribeGazeData();
 
                 } catch (RemoteException e) {
                     throw new RuntimeException(e);
                 }
+
                 //subscribe to tracker status event
+
                 try {
                     inseyeServiceClient.subscribeToEyetrackerEvents(new IEyetrackerEventListener.Stub() {
                         @Override
-                        public void handleTrackerAvailabilityChanged(TrackerAvailability availability) throws RemoteException {
+                        public void handleTrackerAvailabilityChanged(TrackerAvailability availability) {
                             mainLooperHandler.post(() -> statusTextView.setText(availability.toString()));
                         }
                     });
                 } catch (RemoteException e) {
                     throw new RuntimeException(e);
                 }
+
             }
 
             @Override
@@ -116,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     private void SubscribeGazeData() {
         if(!inseyeServiceBinder.isConnected()) {
             Toast.makeText(this, "not bound to service", Toast.LENGTH_SHORT).show();
@@ -128,14 +147,15 @@ public class MainActivity extends AppCompatActivity {
                 int udpPort = result.value;
                 Log.i(TAG, "port:" + udpPort);
                 gazeDataReader = new GazeDataReader(udpPort, gazeData -> {
-                    if(gazeData.timeMilli % 10 == 0) {
                         mainLooperHandler.post(() -> gazeDataTextView.setText(String.format(Locale.US, "Left Eye:   X:%6.2f Y:%6.2f\nRight Eye: X:%6.2f Y:%6.2f\nEvent: %s\nTime: %d",
                                 gazeData.left_x, gazeData.left_y, gazeData.right_x, gazeData.right_y, gazeData.event, gazeData.timeMilli)));
-                    }
+
+                    float avgGazeX = (gazeData.left_x + gazeData.right_x) / 2f;
+                    float avgGazeY = (gazeData.left_y + gazeData.right_y) / 2f;
+                    // gaze data in radians where (0,0) is in screen center
+                    redPointView.post(()-> redPointView.setPoint(avgGazeX, avgGazeY));
                 });
                 gazeDataReader.start();
-                Toast.makeText(this, "udp port: " + result.value, Toast.LENGTH_SHORT).show();
-
             } else {
                 Log.e(TAG, "gaze stream error: " + result.errorMessage);
                 Toast.makeText(this, "gaze stream error: " + result.errorMessage, Toast.LENGTH_SHORT).show();
