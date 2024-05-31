@@ -6,10 +6,17 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
 
+import androidx.annotation.NonNull;
+
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+
 public class RedPointView extends View {
-    private float x = 0;
-    private float y = 0;
+
+    private Vector2D redPoint = new Vector2D(0,0);
     private Paint paint;
+
+    private static final double VERTICAL_HALF_ANGLE_RANGE_DEG = 38.4 / 2.;
+    private static final double VERTICAL_HALF_ANGLE_RANGE_RAD = Math.toRadians(VERTICAL_HALF_ANGLE_RANGE_DEG);
 
     public RedPointView(Context context) {
         super(context);
@@ -33,14 +40,29 @@ public class RedPointView extends View {
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawCircle(x, y, 20, paint); // Draw a red point with radius 10
+        canvas.drawCircle((float) redPoint.getX(), (float) redPoint.getY(), 20, paint);
     }
 
-    public void setPoint(float x, float y) {
-        this.x = x;
-        this.y = y;
+    public void setPoint(float angleX, float angleY) {
+        this.redPoint = angleToPoint(angleX, angleY);
         invalidate(); // Request to redraw the view
+    }
+
+
+    // its temporary converter. Later on api will provide coordinates in screen space along with angular position
+    private Vector2D angleToPoint(float angleX, float angleY) {
+        int width = getWidth();
+        int height = getHeight();
+
+        double y = height / 2.0 * (1 - angleY / VERTICAL_HALF_ANGLE_RANGE_RAD);
+
+        double aspectRatio = width / (double) height;
+        double horizontalAngleRangeRad = VERTICAL_HALF_ANGLE_RANGE_RAD * aspectRatio;
+
+        double x = width / 2.0 * (1 + angleX / horizontalAngleRangeRad);
+
+        return new Vector2D(x, y);
     }
 }
