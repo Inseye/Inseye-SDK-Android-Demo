@@ -16,12 +16,13 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url = uri("file:///C:/Users/piotr/Documents/GitHub/Inseye-SDK-Android/build/repo")
+        }
     }
 }
 
 rootProject.name = "TrackerClientDemo"
 include ':app'
-include ':inseye_client_api'
-project(':inseye_client_api').projectDir = new File(rootDir, 'inseye_tracker_client_api/module/')
 
 

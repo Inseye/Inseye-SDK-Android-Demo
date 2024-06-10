@@ -30,7 +30,8 @@ android {
 
 dependencies {
 
-    implementation project(path: ":inseye_client_api")
+    implementation 'com.inseye:inseye-sdk:0.1-alpha'
+
 
     implementation libs.commons.math3
 
