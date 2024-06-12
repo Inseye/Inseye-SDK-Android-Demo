@@ -16,9 +16,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven {
-            url = uri("file:///C:/Users/piotr/Documents/GitHub/Inseye-SDK-Android/build/repo")
-        }
+        maven { url 'https://jitpack.io' }
     }
 }
 

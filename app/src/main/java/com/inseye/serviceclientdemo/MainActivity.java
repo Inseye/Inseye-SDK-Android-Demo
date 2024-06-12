@@ -29,6 +29,9 @@ import com.inseye.sdk.GazeDataReader;
 import com.inseye.sdk.InseyeSDK;
 import com.inseye.sdk.InseyeTracker;
 import com.inseye.sdk.InseyeTrackerException;
+import com.inseye.sdk.RedPointView;
+import com.inseye.shared.communication.GazeData;
+import com.inseye.shared.communication.TrackerAvailability;
 
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -83,7 +86,7 @@ public class MainActivity extends AppCompatActivity implements GazeDataReader.IG
 //        if(eyeTracker != null && inseyeSDK.isServiceConnected()) {
 
         inseyeSDK.getEyeTracker().thenAccept(insEyeTracker -> {
-            statusTextView.setText(insEyeTracker.getTrackerAvailability());
+            statusTextView.setText(insEyeTracker.getTrackerAvailability().name());
 
             insEyeTracker.subscribeToTrackerStatus(this);
 
@@ -115,6 +118,9 @@ public class MainActivity extends AppCompatActivity implements GazeDataReader.IG
         inseyeSDK.disposeEyeTracker();
         super.onDestroy();
     }
+
+
+
 
     @Override
     public void nextGazeDataReady(GazeData gazeData) {

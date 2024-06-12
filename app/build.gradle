@@ -29,13 +29,9 @@ android {
 }
 
 dependencies {
-
-    implementation 'com.inseye:inseye-sdk:0.1-alpha'
-
+    implementation 'com.github.Inseye:Inseye-SDK-Android:0.0.4'
 
     implementation libs.commons.math3
-
-
     implementation libs.appcompat
     implementation libs.material
     implementation libs.activity
