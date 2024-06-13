@@ -16,12 +16,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://jitpack.io' }
     }
 }
 
 rootProject.name = "TrackerClientDemo"
 include ':app'
-include ':inseye_client_api'
-project(':inseye_client_api').projectDir = new File(rootDir, 'inseye_tracker_client_api/module/')
 
 
