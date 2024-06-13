@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <com.inseye.serviceclientdemo.RedPointView
+    <com.inseye.sdk.RedPointView
         android:id="@+id/redPointView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
