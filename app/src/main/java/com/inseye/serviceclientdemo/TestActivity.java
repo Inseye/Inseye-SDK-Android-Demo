@@ -1,13 +1,9 @@
 package com.inseye.serviceclientdemo;
 
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.RemoteException;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Display;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -17,12 +13,9 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.inseye.sdk.GazeDataReader;
 import com.inseye.sdk.InseyeSDK;
@@ -32,16 +25,11 @@ import com.inseye.sdk.RedPointView;
 import com.inseye.sdk.ScreenUtils;
 import com.inseye.shared.communication.GazeData;
 import com.inseye.shared.communication.TrackerAvailability;
-import com.inseye.shared.communication.Version;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.Locale;
-
-public class MainActivity extends AppCompatActivity implements GazeDataReader.IGazeData, InseyeTracker.IEyeTrackerStatusListener {
-    private final String TAG = MainActivity.class.toString();
+public class TestActivity extends AppCompatActivity implements GazeDataReader.IGazeData, InseyeTracker.IEyeTrackerStatusListener {
+    private final String TAG = TestActivity.class.toString();
     private TextView statusTextView, gazeDataTextView;
     private Button calibrateButton, subGazeDataButton, unsubGazeDataButton;
     private RedPointView redPointView; // Custom view for displaying gaze point
@@ -63,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements GazeDataReader.IG
                 View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
                         View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY); // Hide navigation and enable immersive mode
 
-        setContentView(R.layout.activity_main); // Set layout
+        setContentView(R.layout.activity_test); // Set layout
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom); // Adjust padding for system bars

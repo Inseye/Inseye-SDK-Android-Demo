@@ -17,7 +17,7 @@
         android:forceDarkAllowed="true"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".TestActivity"
             android:screenOrientation="landscape"
             android:exported="true">
             <intent-filter>
