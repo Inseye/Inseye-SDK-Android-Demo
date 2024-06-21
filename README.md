@@ -1,4 +1,4 @@
-e# Inseye SDK Android Demo
+# Inseye SDK Android Demo
 Minimal [**Inseye SDK Android**](https://github.com/Inseye/Inseye-SDK-Android) implementation demo. 
 
 
