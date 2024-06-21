@@ -4,126 +4,131 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
+import android.view.Choreographer;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.inseye.sdk.GazeDataExtension;
 import com.inseye.sdk.GazeDataReader;
-import com.inseye.sdk.InseyeSDK;
 import com.inseye.sdk.InseyeTracker;
+import com.inseye.sdk.InseyeSDK;
 import com.inseye.sdk.InseyeTrackerException;
-import com.inseye.sdk.RedPointView;
 import com.inseye.sdk.ScreenUtils;
 import com.inseye.shared.communication.GazeData;
 import com.inseye.shared.communication.TrackerAvailability;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
-public class TestActivity extends AppCompatActivity implements GazeDataReader.IGazeData, InseyeTracker.IEyeTrackerStatusListener {
-    private final String TAG = TestActivity.class.toString();
-    private TextView statusTextView, gazeDataTextView;
-    private Button calibrateButton, subGazeDataButton, unsubGazeDataButton;
-    private RedPointView redPointView; // Custom view for displaying gaze point
 
-    private final Handler mainLooperHandler = new Handler(Looper.getMainLooper()); // Handler for UI thread
+public class TestActivity extends AppCompatActivity implements GazeDataReader.IGazeData, InseyeTracker.IEyeTrackerStatusListener {
+
+    private static final String TAG = TestActivity.class.getSimpleName();
+    private TextView statusTextView, gazeDataTextView, additionalInfoTextView;
+    private Button calibrateButton, subGazeDataButton, unsubGazeDataButton;
+    private OverlayRedPointView redPointView;
 
     private InseyeSDK inseyeSDK;
+    private InseyeTracker inseyeTracker;
+    private ScreenUtils screenUtils;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this); // Enable edge-to-edge display
+        EdgeToEdge.enable(this);
 
-        requestWindowFeature(Window.FEATURE_NO_TITLE); // Remove title
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN); // Set fullscreen
-
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY); // Hide navigation and enable immersive mode
-
-        setContentView(R.layout.activity_test); // Set layout
+        setContentView(R.layout.activity_test);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom); // Adjust padding for system bars
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        // Initialize UI components
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+
+
         calibrateButton = findViewById(R.id.calibButton);
         subGazeDataButton = findViewById(R.id.subscribeGazeButton);
         unsubGazeDataButton = findViewById(R.id.unsubscribeGazeButton);
         statusTextView = findViewById(R.id.textViewStatus);
         gazeDataTextView = findViewById(R.id.textViewGazeData);
+        additionalInfoTextView = findViewById(R.id.additionalInfoText);
         redPointView = findViewById(R.id.redPointView);
 
-        inseyeSDK = new InseyeSDK(this); // Initialize SDK
+        inseyeSDK = new InseyeSDK(this);
 
-        // Asynchronously get eye tracker instance
         inseyeSDK.getEyeTracker().thenAccept(insEyeTracker -> {
-            statusTextView.setText(insEyeTracker.getTrackerAvailability().name()); // Display tracker availability
+            this.inseyeTracker = insEyeTracker;
+            this.screenUtils = insEyeTracker.getScreenUtils();
+            statusTextView.setText(String.format("Status: %s", insEyeTracker.getTrackerAvailability().name()));
 
-            insEyeTracker.subscribeToTrackerStatus(this); // Subscribe to tracker status updates
+            UpdateAdditionalInfo();
 
+            insEyeTracker.subscribeToTrackerStatus(this);
             calibrateButton.setOnClickListener(v -> {
                 insEyeTracker.startCalibration().thenAccept(result -> {
-                    Toast.makeText(this, result.toString(), Toast.LENGTH_SHORT).show(); // Show calibration result
+                    Toast.makeText(this, result.toString(), Toast.LENGTH_SHORT).show();
                 });
             });
 
             subGazeDataButton.setOnClickListener(v -> {
                 try {
+                    insEyeTracker.startStreamingGazeData();
                     insEyeTracker.subscribeToGazeData(this);
                 } catch (InseyeTrackerException e) {
-                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show(); // Handle subscription error
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
+            unsubGazeDataButton.setOnClickListener(v -> {
+                insEyeTracker.stopStreamingGazeData();
+                insEyeTracker.unsubscribeFromGazeData(this);});
 
-            unsubGazeDataButton.setOnClickListener(v -> insEyeTracker.unsubscribeFromGazeData()); // Unsubscribe from gaze data
 
         }).exceptionally(throwable -> {
-            Toast.makeText(this, throwable.getMessage(), Toast.LENGTH_SHORT).show(); // Handle exceptions
+            Toast.makeText(this, throwable.getMessage(), Toast.LENGTH_SHORT).show();
             Log.e(TAG, throwable.getMessage());
             return null;
         });
     }
 
+    private void UpdateAdditionalInfo() {
+        additionalInfoTextView.post(() -> additionalInfoTextView.setText(String.format("Other Info\n\nDominant Eye: %s\nFov: %s\nService: %s\nCalibration: %s\nFirmware: %s",
+                inseyeTracker.getDominantEye(), inseyeTracker.getVisibleFov(), inseyeTracker.getServiceVersion(), inseyeTracker.getCalibrationVersion(), inseyeTracker.getFirmwareVersion())));
+    }
+
     @Override
     protected void onDestroy() {
-        inseyeSDK.disposeEyeTracker(); // Dispose of the eye tracker
+        inseyeSDK.dispose();
         super.onDestroy();
     }
 
     @Override
+    protected void onResume() {
+        if(inseyeSDK.isServiceConnected()) {
+            statusTextView.setText(String.format("Status: %s", inseyeTracker.getTrackerAvailability().name()));
+            UpdateAdditionalInfo();
+        }
+        super.onResume();
+    }
+
+    @Override
     public void nextGazeDataReady(GazeData gazeData) {
-        // Update gaze data on the UI thread
-        mainLooperHandler.post(() -> gazeDataTextView.setText(String.format("Left Eye:   X:%6.2f Y:%6.2f\nRight Eye: X:%6.2f Y:%6.2f\nEvent: %s\nTime: %d",
+        gazeDataTextView.post(() -> gazeDataTextView.setText(String.format("Gaze Data\n\nLeft Eye:   X:%6.2f Y:%6.2f\nRight Eye:   X:%6.2f Y:%6.2f\nEvent: %s\nTime: %d",
                 gazeData.left_x, gazeData.left_y, gazeData.right_x, gazeData.right_y, gazeData.event, gazeData.timeMilli)));
-
-        // Calculate average gaze coordinates
-        float avgGazeX = (gazeData.left_x + gazeData.right_x) / 2f;
-        float avgGazeY = (gazeData.left_y + gazeData.right_y) / 2f;
-
-        // Convert gaze data to screen space and then to view space
-        Vector2D screenSpaceGaze = ScreenUtils.angleToScreenSpace(avgGazeX, avgGazeY, this);
-        Vector2D viewSpaceGaze = ScreenUtils.screenSpaceToViewSpace(redPointView, screenSpaceGaze);
-
-        // Update red point view with new gaze coordinates
-        redPointView.post(() -> redPointView.setPoint((float) viewSpaceGaze.getX(), (float) viewSpaceGaze.getY(), this));
+        Vector2D gazeMidPoint = GazeDataExtension.getGazeCombined(gazeData);
+        Vector2D gazeViewSpace = screenUtils.angleToViewSpace(gazeMidPoint, redPointView);
+        redPointView.post(() -> redPointView.setPoint(gazeViewSpace));
     }
 
     @Override
     public void onTrackerAvailabilityChanged(TrackerAvailability availability) {
-        // Update tracker availability status on the UI thread
-        mainLooperHandler.post(() -> statusTextView.setText(availability.name()));
+        statusTextView.post(() -> statusTextView.setText(String.format("Status: %s", availability.name())));
     }
 }
