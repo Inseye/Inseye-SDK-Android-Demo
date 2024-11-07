@@ -1,4 +1,4 @@
-package com.inseye.serviceclientdemo;
+package com.inseye.client_demo;
 
 import android.content.Context;
 import android.graphics.Canvas;

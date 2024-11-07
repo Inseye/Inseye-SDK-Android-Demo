@@ -3,15 +3,15 @@ plugins {
 }
 
 android {
-    namespace 'com.inseye.serviceclientdemo'
-    compileSdk 34
+    namespace 'com.inseye.client_demo'
+    compileSdk 35
 
     defaultConfig {
-        applicationId "com.inseye.serviceclientdemo"
+        applicationId "com.inseye.client_demo"
         minSdk 27
-        targetSdk 34
-        versionCode 3
-        versionName "0.3-alpha"
+        targetSdk 35
+        versionCode 4
+        versionName "0.4-alpha"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -29,7 +29,7 @@ android {
 }
 
 dependencies {
-    implementation 'com.github.Inseye:Inseye-SDK-Android:0.1.0'
+    implementation libs.inseye.sdk.android
 
     implementation libs.commons.math3
     implementation libs.appcompat
