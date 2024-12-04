@@ -1,6 +1,6 @@
 [versions]
-agp = "8.7.2"
-inseyeSdkAndroid = "0.2.0-alpha"
+agp = "8.7.3"
+inseyeSdkAndroid = "0.2.1-alpha"
 commonsMath3 = "3.6.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -9,6 +9,7 @@ appcompat = "1.7.0"
 material = "1.12.0"
 activity = "1.9.3"
 constraintlayout = "2.2.0"
+databindingCompiler = "8.7.3"
 
 [libraries]
 commons-math3 = { module = "org.apache.commons:commons-math3", version.ref = "commonsMath3" }
@@ -20,6 +21,7 @@ appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "a
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+databinding-compiler = { group = "androidx.databinding", name = "databinding-compiler", version.ref = "databindingCompiler" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

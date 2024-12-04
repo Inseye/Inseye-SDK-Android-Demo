@@ -65,6 +65,7 @@ public class TestActivity extends AppCompatActivity implements GazeDataReader.IG
         gazeDataTextView = findViewById(R.id.textViewGazeData);
         additionalInfoTextView = findViewById(R.id.additionalInfoText);
         redPointView = findViewById(R.id.redPointView);
+
     }
 
     private void initializeInseyeSDK() {
@@ -76,6 +77,10 @@ public class TestActivity extends AppCompatActivity implements GazeDataReader.IG
             updateStatusText(insEyeTracker.getTrackerAvailability().name());
 
             updateAdditionalInfo();
+
+            Vector2D center = screenUtils.angleToAbsoluteScreenSpace(Vector2D.ZERO);
+            redPointView.post(() -> redPointView.setPoint(center));
+
             insEyeTracker.subscribeToTrackerStatus(this);
 
         }).exceptionally(throwable -> {
@@ -158,7 +163,8 @@ public class TestActivity extends AppCompatActivity implements GazeDataReader.IG
                 gazeDataTextView.setText(String.format("Gaze Data\n\nLeft Eye:   X:%6.2f Y:%6.2f\nRight Eye:   X:%6.2f Y:%6.2f\nEvent: %s\nTime: %d",
                 gazeData.left_x, gazeData.left_y, gazeData.right_x, gazeData.right_y, gazeData.event, gazeData.timeMilli)));
         Vector2D gazeMidPoint = GazeDataExtension.getGazeCombined(gazeData);
-        Vector2D gazeViewSpace = screenUtils.angleToViewSpace(gazeMidPoint, redPointView);
+        Vector2D gazeViewSpace = screenUtils.angleToAbsoluteScreenSpace(gazeMidPoint);
+
         redPointView.post(() -> redPointView.setPoint(gazeViewSpace));
     }
 

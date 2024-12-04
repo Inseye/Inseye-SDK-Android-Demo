@@ -14,11 +14,9 @@
         android:roundIcon="@mipmap/ic_launcher_inseye_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TrackerClientDemo"
-        android:forceDarkAllowed="true"
-        tools:targetApi="31">
+        android:forceDarkAllowed="true">
         <activity
             android:name=".TestActivity"
-            android:screenOrientation="landscape"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
